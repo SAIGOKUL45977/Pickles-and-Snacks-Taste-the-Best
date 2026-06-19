@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block title %}Add Product{% endblock %}
+{% block page_title %}➕ Add New Product{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;">
+<div class="card">
+    <div class="card-title">Product Details</div>
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Product Name *</label>
+                <input type="text" name="name" placeholder="e.g. Tomato Pickle" required>
+            </div>
+            <div class="form-group">
+                <label>Category *</label>
+                <select name="category" required>
+                    <option value="">-- Select Category --</option>
+                    <option value="Pickles">🫙 Pickles</option>
+                    <option value="Snacks">🍿 Snacks</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Price (₹) *</label>
+                <input type="number" name="price" placeholder="e.g. 120" min="1" required>
+            </div>
+            <div class="form-group">
+                <label>Initial Stock (units) *</label>
+                <input type="number" name="stock" placeholder="e.g. 50" min="0" value="50" required>
+            </div>
+            <div class="form-group">
+                <label>Rating (out of 5.0)</label>
+                <input type="number" name="rating" placeholder="e.g. 4.5" min="0" max="5" step="0.1" value="4.0">
+            </div>
+            <div class="form-group">
+                <label>Tags</label>
+                <input type="text" name="tags" placeholder="e.g. spicy, traditional, bestseller">
+                <div class="form-hint">Separate tags with commas. Common: spicy, tangy, traditional, crunchy, bestseller, andhra</div>
+            </div>
+            <div class="form-group full">
+                <label>Description *</label>
+                <textarea name="description" rows="3" placeholder="Describe the product — taste, ingredients, how it's made..." required></textarea>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+            <button type="submit" class="btn btn-primary">➕ Add Product</button>
+            <a href="{{ url_for('admin_products') }}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- Preview of tag colors -->
+<div class="card">
+    <div class="card-title">🏷️ Available Tag Colors</div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        {% for tag, color in [('spicy','#ff6b35'),('bestseller','#D4A017'),('traditional','#8B4513'),('tangy','#f39c12'),('light','#27ae60'),('bold','#8e44ad'),('garlic','#7f8c8d'),('crunchy','#e67e22'),('andhra','#c0392b')] %}
+        <span style="background:{{ color }};color:#fff;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.78rem;font-weight:700;">{{ tag }}</span>
+        {% endfor %}
+    </div>
+</div>
+</div>
+{% endblock %}

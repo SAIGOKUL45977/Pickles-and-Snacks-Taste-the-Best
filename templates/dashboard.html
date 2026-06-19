@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - HomeMade Pickles & Snacks{% endblock %}
+{% block extra_css %}
+<style>
+.dashboard-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--primary); margin-bottom:2rem; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.5rem; margin-bottom:2rem; }
+.stat-card { background:#fff; border-radius:12px; padding:1.5rem; box-shadow:0 2px 12px rgba(0,0,0,0.08); text-align:center; }
+.stat-icon { font-size:2rem; margin-bottom:0.5rem; }
+.stat-value { font-size:2rem; font-weight:700; color:var(--primary); }
+.stat-label { color:var(--muted); font-size:0.85rem; }
+.section-title { font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--primary); margin-bottom:1rem; }
+.order-row { display:flex; justify-content:space-between; align-items:center; padding:1rem; background:#fff; border-radius:8px; margin-bottom:0.8rem; box-shadow:0 1px 4px rgba(0,0,0,0.06); flex-wrap:wrap; gap:0.5rem; }
+/* Fix #4: Dynamic status */
+.status-confirmed  { background:#d4edda; color:#155724; padding:0.2rem 0.6rem; border-radius:8px; font-size:0.8rem; font-weight:700; }
+.status-processing { background:#fff3cd; color:#856404; padding:0.2rem 0.6rem; border-radius:8px; font-size:0.8rem; font-weight:700; }
+.status-shipped    { background:#cce5ff; color:#004085; padding:0.2rem 0.6rem; border-radius:8px; font-size:0.8rem; font-weight:700; }
+.status-delivered  { background:#d1ecf1; color:#0c5460; padding:0.2rem 0.6rem; border-radius:8px; font-size:0.8rem; font-weight:700; }
+.status-cancelled  { background:#f8d7da; color:#721c24; padding:0.2rem 0.6rem; border-radius:8px; font-size:0.8rem; font-weight:700; }
+/* Subscription card */
+.sub-active { background:linear-gradient(135deg,#d4edda,#c3e6cb); border-radius:12px; padding:1.5rem; border:2px solid #28a745; margin-bottom:2rem; }
+.sub-none { background:#f8f9fa; border-radius:12px; padding:1.5rem; border:2px dashed var(--border); margin-bottom:2rem; text-align:center; }
+</style>
+{% endblock %}
+{% block content %}
+<h1 class="dashboard-title">📊 My Dashboard</h1>
+<p style="color:var(--muted);margin-bottom:2rem;">Welcome back, <b>{{ session.get('user_name') }}</b>!</p>
+
+<!-- Fix #7: Removed Low Stock Alerts (admin concern, not customer)
+     Fix #8: Member status based on actual subscription -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value">{{ order_count }}</div>
+        <div class="stat-label">Total Orders</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value">₹{{ "%.0f"|format(total_spent) }}</div>
+        <div class="stat-label">Total Spent</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🎁</div>
+        <!-- Fix #8: Real membership status based on subscription -->
+        <div class="stat-value" style="font-size:1.2rem;">
+            {% if current_sub %}{{ current_sub.Plan|title }}{% else %}Standard{% endif %}
+        </div>
+        <div class="stat-label">Membership</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">{{ order_count * 10 }}</div>
+        <div class="stat-label">Loyalty Points</div>
+    </div>
+</div>
+
+<!-- Subscription status -->
+{% if current_sub %}
+<div class="sub-active">
+    <b style="color:#155724;">🎁 Active Subscription: {{ current_sub.Plan|title }} Plan</b>
+    <p style="color:#155724;margin-top:0.3rem;font-size:0.9rem;">
+        Started: {{ current_sub.StartDate[:10] }} &nbsp;|&nbsp; Status: {{ current_sub.Status }}
+    </p>
+    <a href="{{ url_for('subscriptions') }}" class="btn btn-outline" style="margin-top:0.8rem;border-color:#155724;color:#155724;">Manage Subscription</a>
+</div>
+{% else %}
+<div class="sub-none">
+    <p style="color:var(--muted);margin-bottom:0.8rem;">🎁 No active subscription. Save more with regular deliveries!</p>
+    <a href="{{ url_for('subscriptions') }}" class="btn btn-primary">View Subscription Plans</a>
+</div>
+{% endif %}
+
+<!-- Recent Orders with Fix #4 dynamic status -->
+<h2 class="section-title">📋 Recent Orders</h2>
+{% if orders %}
+{% for order in orders[:5] %}
+<div class="order-row">
+    <span style="font-weight:700;color:var(--primary);">{{ order.OrderID }}</span>
+    <span style="color:var(--muted);font-size:0.9rem;">{{ order.OrderedAt[:10] }}</span>
+    <span style="font-weight:700;">₹{{ order.Total }}</span>
+    <span class="status-{{ order.Status|lower }}">{{ order.Status }}</span>
+</div>
+{% endfor %}
+<div style="margin-top:1rem;">
+    <a href="{{ url_for('my_orders') }}" class="btn btn-outline">View All Orders →</a>
+</div>
+{% else %}
+<div style="text-align:center;padding:3rem;background:#fff;border-radius:12px;">
+    <p style="color:var(--muted);margin-bottom:1rem;">No orders placed yet.</p>
+    <a href="{{ url_for('products') }}" class="btn btn-primary">Start Shopping</a>
+</div>
+{% endif %}
+{% endblock %}

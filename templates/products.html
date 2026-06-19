@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Shop - HomeMade Pickles & Snacks{% endblock %}
+{% block extra_css %}
+<style>
+.shop-header { margin-bottom:2rem; }
+.shop-header h1 { font-family:'Playfair Display',serif; font-size:2rem; color:var(--primary); }
+.filters { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:2rem; align-items:center; }
+.filter-btn { padding:0.4rem 1rem; border-radius:20px; border:2px solid var(--border); background:#fff; cursor:pointer; font-size:0.85rem; transition:all 0.2s; text-decoration:none; color:var(--text); }
+.filter-btn:hover, .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.search-box { display:flex; gap:0.5rem; margin-left:auto; }
+.search-box input { padding:0.4rem 1rem; border:2px solid var(--border); border-radius:20px; outline:none; font-size:0.9rem; }
+.search-box button { padding:0.4rem 1rem; background:var(--primary); color:#fff; border:none; border-radius:20px; cursor:pointer; }
+.products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:1.5rem; }
+.product-card .product-img { width:100%; height:170px; background:linear-gradient(135deg,#f5e6d3,#ffe0b2); display:flex; align-items:center; justify-content:center; font-size:4rem; }
+.product-body { padding:1.2rem; }
+.product-name { font-weight:700; font-size:1rem; margin-bottom:0.3rem; }
+.product-desc { color:var(--muted); font-size:0.82rem; margin-bottom:0.8rem; line-height:1.4; }
+.product-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; }
+.product-price { font-size:1.2rem; font-weight:700; color:var(--primary); }
+.product-rating { color:var(--secondary); font-size:0.85rem; }
+/* Fix #1: Quick add on product cards */
+.product-actions { display:flex; gap:0.5rem; }
+.no-products { text-align:center; padding:4rem; color:var(--muted); font-size:1.2rem; }
+/* Fix #2: Breadcrumb */
+.breadcrumb { font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem; }
+.breadcrumb a { color:var(--primary); text-decoration:none; }
+.breadcrumb a:hover { text-decoration:underline; }
+</style>
+{% endblock %}
+{% block content %}
+<!-- Fix #2: Breadcrumb -->
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">🏠 Home</a> › 
+    {% if selected_category %}
+        <a href="{{ url_for('products') }}">Shop</a> › {{ selected_category }}
+    {% elif search %}
+        <a href="{{ url_for('products') }}">Shop</a> › Search: "{{ search }}"
+    {% else %}
+        Shop
+    {% endif %}
+</div>
+
+<div class="shop-header">
+    <h1>🛒 Our Products</h1>
+    <p style="color:var(--muted)">Handcrafted with love, delivered fresh</p>
+</div>
+
+<div class="filters">
+    <a href="{{ url_for('products') }}" class="filter-btn {% if not selected_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('products', category=cat) }}" class="filter-btn {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+    <form class="search-box" method="GET" action="{{ url_for('products') }}">
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        <input type="text" name="search" placeholder="Search products..." value="{{ search }}">
+        <button type="submit">🔍</button>
+    </form>
+</div>
+
+{% if products %}
+<div class="products-grid">
+{% for product in products %}
+<div class="card product-card">
+    <div class="product-img">
+        {% if product.image_exists %}
+            <img src="{{ url_for('static', filename=product.image_path) }}"
+                 alt="{{ product.Name }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+            {% if product.Category == 'Pickles' %}🫙{% else %}🍿{% endif %}
+        {% endif %}
+    </div>
+    <div class="product-body">
+        <div class="product-name">{{ product.Name }}</div>
+        <div class="product-desc">{{ product.Description }}</div>
+        <div style="margin-bottom:0.8rem;">
+            {% for tag in product.get('Tags', [])[:2] %}
+                <span class="badge badge-{{ tag }}">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        <div class="product-meta">
+            <span class="product-price">₹{{ product.Price }}</span>
+            <span class="product-rating">⭐ {{ product.Rating }}</span>
+        </div>
+        <!-- Fix #1: Quick Add to Cart on product cards -->
+        <div class="product-actions">
+            <a href="{{ url_for('product_detail', product_id=product.ProductID) }}"
+               class="btn btn-outline" style="flex:1;text-align:center;font-size:0.82rem;">View</a>
+            {% if session.get('user_id') %}
+            <form method="POST" action="{{ url_for('add_to_cart', product_id=product.ProductID) }}" style="flex:2;">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-primary" style="width:100%;white-space:nowrap;">🛒 Add to Cart</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary" style="flex:2;text-align:center;font-size:0.82rem;">🛒 Add to Cart</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="no-products">
+    <div style="font-size:3rem;margin-bottom:1rem;">😔</div>
+    <p>No products found.</p>
+    <a href="{{ url_for('products') }}" class="btn btn-outline" style="margin-top:1rem;">Clear filters</a>
+</div>
+{% endif %}
+{% endblock %}

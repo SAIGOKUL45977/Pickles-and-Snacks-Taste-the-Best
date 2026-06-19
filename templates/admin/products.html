@@ -1,0 +1,118 @@
+{% extends "admin/base.html" %}
+{% block title %}Products{% endblock %}
+{% block page_title %}🫙 Manage Products{% endblock %}
+{% block extra_css %}
+<style>
+/* Fix #12: Search bar */
+.search-bar { display:flex; gap:0.8rem; margin-bottom:1.5rem; align-items:center; }
+.search-bar input { padding:0.6rem 1rem; border:2px solid var(--border); border-radius:8px; font-size:0.9rem; outline:none; flex:1; max-width:300px; }
+.search-bar input:focus { border-color:var(--primary); }
+.filter-pill { padding:0.4rem 0.9rem; border-radius:20px; border:2px solid var(--border); background:#fff; font-size:0.82rem; cursor:pointer; text-decoration:none; color:var(--text); }
+.filter-pill.active, .filter-pill:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+</style>
+{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+    <p style="color:#888;">{{ products|length }} products in catalog</p>
+    <a href="{{ url_for('admin_add_product') }}" class="btn btn-primary">➕ Add New Product</a>
+</div>
+
+<!-- Fix #12: Search and filter -->
+<div class="search-bar">
+    <input type="text" id="productSearch" placeholder="🔍 Search by name..." oninput="filterProducts()">
+    <a href="#" class="filter-pill active" onclick="filterByCategory('')">All</a>
+    <a href="#" class="filter-pill" onclick="filterByCategory('Pickles')">🫙 Pickles</a>
+    <a href="#" class="filter-pill" onclick="filterByCategory('Snacks')">🍿 Snacks</a>
+    <a href="#" class="filter-pill" onclick="filterByStock()">⚠️ Low Stock</a>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+    <table id="productsTable">
+        <thead>
+            <tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Rating</th><th>Tags</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {% for product in products %}
+        <tr data-name="{{ product.Name|lower }}" data-category="{{ product.Category }}" data-stock="{{ product.Stock }}">
+            <td><b style="color:#8B2500;">{{ product.ProductID }}</b></td>
+            <td><b>{{ product.Name }}</b></td>
+            <td>
+                <span style="background:{% if product.Category=='Pickles' %}#d4edda{% else %}#fff3cd{% endif %};
+                             color:{% if product.Category=='Pickles' %}#155724{% else %}#856404{% endif %};
+                             padding:0.2rem 0.6rem;border-radius:20px;font-size:0.78rem;font-weight:700;">
+                    {{ product.Category }}
+                </span>
+            </td>
+            <td><b>₹{{ product.Price }}</b></td>
+            <td>
+                {% if product.Stock == 0 %}
+                    <span class="stock-out">❌ Out of Stock</span>
+                {% elif product.Stock < 20 %}
+                    <span class="stock-low">⚠️ {{ product.Stock }}</span>
+                {% else %}
+                    <span class="stock-ok">{{ product.Stock }}</span>
+                {% endif %}
+            </td>
+            <td>⭐ {{ product.Rating }}</td>
+            <td>{% for tag in product.get('Tags', [])[:2] %}<span style="background:#f0f0f0;padding:0.15rem 0.4rem;border-radius:8px;font-size:0.72rem;">{{ tag }}</span> {% endfor %}</td>
+            <td>
+                <div style="display:flex;gap:0.5rem;">
+                    <a href="{{ url_for('admin_edit_product', product_id=product.ProductID) }}" class="btn btn-warning btn-sm">✏️ Edit</a>
+                    <!-- Fix #13: Warning if product has orders -->
+                    <form method="POST" action="{{ url_for('admin_delete_product', product_id=product.ProductID) }}"
+                          onsubmit="return confirmDelete('{{ product.Name }}', {{ product.has_orders }})">
+                        <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+let currentCategory = '';
+let showLowStockOnly = false;
+
+function filterProducts() {
+    const search = document.getElementById('productSearch').value.toLowerCase();
+    document.querySelectorAll('#productsTable tbody tr').forEach(row => {
+        const name     = row.dataset.name || '';
+        const category = row.dataset.category || '';
+        const stock    = parseInt(row.dataset.stock || '999');
+        const matchSearch   = name.includes(search);
+        const matchCategory = !currentCategory || category === currentCategory;
+        const matchStock    = !showLowStockOnly || stock < 20;
+        row.style.display = (matchSearch && matchCategory && matchStock) ? '' : 'none';
+    });
+}
+
+function filterByCategory(cat) {
+    currentCategory = cat;
+    showLowStockOnly = false;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    filterProducts();
+}
+
+function filterByStock() {
+    showLowStockOnly = true;
+    currentCategory = '';
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    filterProducts();
+}
+
+// Fix #13: Warn before deleting product that has orders
+function confirmDelete(name, hasOrders) {
+    if (hasOrders) {
+        return confirm(`⚠️ WARNING: "${name}" has existing customer orders!\nDeleting it will affect order history.\n\nAre you sure you want to delete it?`);
+    }
+    return confirm(`Delete "${name}"? This cannot be undone.`);
+}
+</script>
+{% endblock %}

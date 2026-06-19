@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}HomeMade Pickles & Snacks - Pure, Preservative-Free{% endblock %}
+{% block extra_css %}
+<style>
+.hero {
+    background: linear-gradient(135deg, var(--primary) 0%, #5c1800 100%);
+    color: #fff; padding: 5rem 3rem; border-radius: 16px;
+    text-align: center; position: relative; overflow: hidden; margin-bottom: 3rem;
+}
+.hero::before { content: '🥒🌶️🍋🧄'; position:absolute; top:-10px; left:0; font-size:6rem; opacity:0.1; letter-spacing:2rem; }
+.hero h1 { font-family:'Playfair Display',serif; font-size:3rem; color:var(--secondary); margin-bottom:1rem; }
+.hero p { font-size:1.2rem; opacity:0.9; margin-bottom:2rem; max-width:600px; margin-left:auto; margin-right:auto; }
+.hero-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+.section-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--primary); margin-bottom:0.5rem; }
+.section-subtitle { color:var(--muted); margin-bottom:2rem; }
+.products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.5rem; margin-bottom:3rem; }
+.product-card .product-img-placeholder { width:100%; height:180px; background:linear-gradient(135deg,#f5e6d3,#ffe0b2); display:flex; align-items:center; justify-content:center; font-size:4rem; }
+.product-body { padding:1.2rem; }
+.product-name { font-weight:700; font-size:1.1rem; margin-bottom:0.3rem; }
+.product-desc { color:var(--muted); font-size:0.85rem; margin-bottom:0.8rem; }
+.product-footer { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem; }
+.product-price { font-size:1.2rem; font-weight:700; color:var(--primary); }
+.product-rating { color:var(--secondary); font-size:0.9rem; }
+/* Fix #1: Quick add button */
+.product-actions { display:flex; gap:0.5rem; margin-top:0.8rem; }
+.features { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.5rem; margin:3rem 0; }
+.feature-card { text-align:center; padding:2rem 1rem; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.feature-icon { font-size:2.5rem; margin-bottom:1rem; }
+.feature-title { font-weight:700; color:var(--primary); margin-bottom:0.5rem; }
+/* Fix #6: Empty state */
+.empty-state { text-align:center; padding:4rem; color:var(--muted); background:#fff; border-radius:12px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>Taste the Tradition 🥒</h1>
+    <p>Handcrafted pickles and snacks made with century-old recipes, sourced from local farmers, delivered fresh to your door.</p>
+    <div class="hero-btns">
+        <a href="{{ url_for('products') }}" class="btn btn-secondary">Shop Now</a>
+        <a href="{{ url_for('subscriptions') }}" class="btn btn-outline" style="border-color:#fff;color:#fff;">Subscribe & Save</a>
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature-card"><div class="feature-icon">🌿</div><div class="feature-title">100% Natural</div><p style="font-size:0.85rem;color:var(--muted)">No preservatives, no artificial colors</p></div>
+    <div class="feature-card"><div class="feature-icon">🧑‍🌾</div><div class="feature-title">Farm to Table</div><p style="font-size:0.85rem;color:var(--muted)">Sourced directly from local farmers</p></div>
+    <div class="feature-card"><div class="feature-icon">📦</div><div class="feature-title">Eco Packaging</div><p style="font-size:0.85rem;color:var(--muted)">Sustainable, biodegradable packaging</p></div>
+    <div class="feature-card"><div class="feature-icon">☁️</div><div class="feature-title">Cloud-Powered</div><p style="font-size:0.85rem;color:var(--muted)">Real-time inventory on AWS</p></div>
+</div>
+
+<h2 class="section-title">⭐ Bestsellers</h2>
+<p class="section-subtitle">Our most-loved picks by customers across India</p>
+
+{% if products %}
+<div class="products-grid">
+{% for product in products %}
+<div class="card product-card">
+    <div class="product-img-placeholder">
+        {% if product.image_exists %}
+            <img src="{{ url_for('static', filename=product.image_path) }}"
+                 alt="{{ product.Name }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+            {% if product.Category == 'Pickles' %}🫙{% else %}🍿{% endif %}
+        {% endif %}
+    </div>
+    <div class="product-body">
+        <div class="product-name">{{ product.Name }}</div>
+        <div class="product-desc">{{ product.Description[:70] }}...</div>
+        <div style="margin-bottom:0.8rem;">
+            {% for tag in product.get('Tags', [])[:2] %}
+                <span class="badge badge-{{ tag }}">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        <div class="product-footer">
+            <span class="product-price">₹{{ product.Price }}</span>
+            <span class="product-rating">⭐ {{ product.Rating }}</span>
+        </div>
+        <!-- Fix #1: Quick Add to Cart + View Details -->
+        <div class="product-actions">
+            <a href="{{ url_for('product_detail', product_id=product.ProductID) }}"
+               class="btn btn-outline" style="flex:1;text-align:center;">View</a>
+            {% if session.get('user_id') %}
+            <form method="POST" action="{{ url_for('add_to_cart', product_id=product.ProductID) }}" style="flex:2;">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-primary" style="width:100%;white-space:nowrap;">🛒 Add to Cart</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary" style="flex:2;text-align:center;white-space:nowrap;">🛒 Add to Cart</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<!-- Fix #6: Empty state -->
+<div class="empty-state">
+    <div style="font-size:4rem;margin-bottom:1rem;">🫙</div>
+    <h3 style="color:var(--primary);margin-bottom:0.5rem;">Products Coming Soon!</h3>
+    <p>Our owner is preparing fresh products. Check back shortly!</p>
+</div>
+{% endif %}
+
+<div style="text-align:center;margin-top:1rem;">
+    <a href="{{ url_for('products') }}" class="btn btn-outline">View All Products →</a>
+</div>
+{% endblock %}

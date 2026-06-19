@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Your Cart - HomeMade Pickles & Snacks{% endblock %}
+{% block extra_css %}
+<style>
+.cart-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--primary); margin-bottom:2rem; }
+.cart-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+.cart-table th { background:var(--primary); color:#fff; padding:1rem; text-align:left; font-size:0.85rem; }
+.cart-table td { padding:1rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+.cart-table tr:last-child td { border-bottom:none; }
+.cart-item-name { font-weight:700; }
+.cart-total-row { font-size:1.1rem; font-weight:700; color:var(--primary); }
+.cart-summary { background:#fff; border-radius:12px; padding:2rem; box-shadow:0 2px 12px rgba(0,0,0,0.08); margin-top:2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+.empty-cart { text-align:center; padding:5rem; color:var(--muted); }
+.empty-cart p { font-size:1.5rem; margin-bottom:1rem; }
+/* Fix #5: Quantity update input */
+.qty-form { display:flex; align-items:center; gap:0.4rem; }
+.qty-form input { width:60px; padding:0.3rem; border:2px solid var(--border); border-radius:6px; text-align:center; font-size:0.9rem; }
+.qty-form button { padding:0.3rem 0.6rem; font-size:0.78rem; }
+</style>
+{% endblock %}
+{% block content %}
+<h1 class="cart-title">🛒 Your Cart</h1>
+{% if cart_products %}
+<table class="cart-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <!-- Fix #5: Quantity column now has update form -->
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th>Remove</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in cart_products %}
+        <tr>
+            <td>
+                <span style="font-size:1.5rem;">{% if item.Category=='Pickles'%}🫙{% else %}🍿{% endif %}</span>
+                <span class="cart-item-name" style="margin-left:0.5rem;">{{ item.Name }}</span>
+            </td>
+            <td>₹{{ item.Price }}</td>
+            <td>
+                <!-- Fix #5: Update quantity in cart -->
+                <form method="POST" action="{{ url_for('update_cart', product_id=item.ProductID) }}" class="qty-form">
+                    <button type="submit" name="action" value="decrease" class="btn btn-outline">−</button>
+                    <input type="number" name="quantity" value="{{ item.Quantity }}" min="1" max="50"
+                           onchange="this.form.submit()">
+                    <button type="submit" name="action" value="increase" class="btn btn-outline">+</button>
+                </form>
+            </td>
+            <td>₹{{ "%.2f"|format(item.Subtotal) }}</td>
+            <td>
+                <a href="{{ url_for('remove_from_cart', product_id=item.ProductID) }}"
+                   style="color:#dc3545;text-decoration:none;font-size:1.1rem;"
+                   onclick="return confirm('Remove {{ item.Name }} from cart?')">🗑️</a>
+            </td>
+        </tr>
+        {% endfor %}
+        <tr class="cart-total-row">
+            <td colspan="3" style="text-align:right;padding:1rem;">Total:</td>
+            <td colspan="2">₹{{ "%.2f"|format(total) }}</td>
+        </tr>
+    </tbody>
+</table>
+<div class="cart-summary">
+    <!-- Fix #9: Continue Shopping -->
+    <a href="{{ url_for('products') }}" class="btn btn-outline">← Continue Shopping</a>
+    <a href="{{ url_for('checkout') }}" class="btn btn-primary">Proceed to Checkout →</a>
+</div>
+{% else %}
+<div class="empty-cart">
+    <p>🛒 Your cart is empty!</p>
+    <a href="{{ url_for('products') }}" class="btn btn-primary">Start Shopping</a>
+</div>
+{% endif %}
+{% endblock %}

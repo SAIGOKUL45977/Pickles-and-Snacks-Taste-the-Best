@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% block title %}Users{% endblock %}
+{% block page_title %}👥 Registered Users{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">{{ users|length }} registered users</div>
+    {% if users %}
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Subscription</th><th>Joined</th></tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+        <tr>
+            <td><b>{{ user.Name }}</b></td>
+            <td style="color:#888;">{{ user.Email }}</td>
+            <td style="font-size:0.85rem;">{{ user.Phone }}</td>
+            <td>
+                <span style="background:#e8f5e9;color:#2e7d32;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.8rem;font-weight:700;">
+                    {{ user.OrderCount }} orders
+                </span>
+            </td>
+            <td>
+                {% if user.HasSub %}
+                    <span class="status status-confirmed">✅ Active</span>
+                {% else %}
+                    <span style="color:#888;font-size:0.85rem;">None</span>
+                {% endif %}
+            </td>
+            <td style="color:#888;font-size:0.82rem;">{{ user.CreatedAt[:10] }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#888;padding:3rem;">No users registered yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

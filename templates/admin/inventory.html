@@ -1,0 +1,66 @@
+{% extends "admin/base.html" %}
+{% block title %}Inventory{% endblock %}
+{% block page_title %}📦 Manage Inventory{% endblock %}
+{% block content %}
+<!-- Fix #17: Success message after update -->
+{% if updated_product %}
+<div style="background:#d4edda;color:#155724;border-left:4px solid #28a745;padding:0.8rem 1.2rem;border-radius:8px;margin-bottom:1.5rem;display:flex;justify-content:space-between;">
+    <span>✅ Stock updated for <b>{{ updated_product }}</b> successfully!</span>
+    <button onclick="this.parentElement.remove()" style="border:none;background:none;cursor:pointer;">✕</button>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-title">Stock Levels — Click Update to save changes</div>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Product</th><th>Category</th><th>Current Stock</th><th>Status</th><th>New Stock</th></tr>
+        </thead>
+        <tbody>
+        {% for item in inventory %}
+        <tr>
+            <td><b>{{ item.Name }}</b><br><small style="color:#888;">{{ item.ProductID }}</small></td>
+            <td>{{ item.Category }}</td>
+            <td><b style="font-size:1.1rem;">{{ item.Stock }}</b> units</td>
+            <td>
+                {% if item.Stock == 0 %}
+                    <span class="status status-cancelled">Out of Stock</span>
+                {% elif item.Stock < 20 %}
+                    <span class="status status-processing">⚠️ Low Stock</span>
+                {% else %}
+                    <span class="status status-confirmed">✅ OK</span>
+                {% endif %}
+            </td>
+            <td>
+                <!-- Fix #17: Clear feedback on update -->
+                <form method="POST" style="display:flex;gap:0.5rem;align-items:center;">
+                    <input type="hidden" name="product_id" value="{{ item.ProductID }}">
+                    <input type="hidden" name="product_name" value="{{ item.Name }}">
+                    <input type="number" name="stock" value="{{ item.Stock }}" min="0"
+                           style="width:80px;padding:0.4rem;border:2px solid #e0e0e0;border-radius:6px;font-size:0.9rem;">
+                    <button type="submit" class="btn btn-success btn-sm">✅ Update</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+    <div class="card" style="text-align:center;padding:1rem;">
+        <div style="font-size:1.8rem;font-weight:700;color:#28a745;">{{ inventory|selectattr('Stock','gt',20)|list|length }}</div>
+        <div style="color:#888;font-size:0.85rem;">✅ Well Stocked</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem;">
+        <div style="font-size:1.8rem;font-weight:700;color:#ffc107;">{{ inventory|selectattr('Stock','lt',20)|selectattr('Stock','gt',0)|list|length }}</div>
+        <div style="color:#888;font-size:0.85rem;">⚠️ Low Stock</div>
+    </div>
+    <div class="card" style="text-align:center;padding:1rem;">
+        <div style="font-size:1.8rem;font-weight:700;color:#dc3545;">{{ inventory|selectattr('Stock','eq',0)|list|length }}</div>
+        <div style="color:#888;font-size:0.85rem;">❌ Out of Stock</div>
+    </div>
+</div>
+{% endblock %}

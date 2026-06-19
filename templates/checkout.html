@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Checkout - HomeMade Pickles & Snacks{% endblock %}
+{% block extra_css %}
+<style>
+.checkout-grid { display:grid; grid-template-columns:1fr 380px; gap:2rem; }
+.checkout-form { background:#fff; border-radius:16px; padding:2rem; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+.order-summary { background:#fff; border-radius:16px; padding:2rem; box-shadow:0 2px 12px rgba(0,0,0,0.08); height:fit-content; }
+.section-label { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--primary); margin-bottom:1.5rem; }
+.form-group { margin-bottom:1.2rem; }
+.form-group label { display:block; font-weight:700; font-size:0.85rem; margin-bottom:0.4rem; }
+.form-group input, .form-group select, .form-group textarea { width:100%; padding:0.7rem 1rem; border:2px solid var(--border); border-radius:8px; font-size:0.9rem; outline:none; transition:border 0.2s; font-family:inherit; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--primary); }
+.order-item { display:flex; justify-content:space-between; padding:0.6rem 0; border-bottom:1px solid var(--border); }
+.order-total { display:flex; justify-content:space-between; padding:1rem 0; font-size:1.2rem; font-weight:700; color:var(--primary); }
+.payment-options { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+.payment-option { position:relative; }
+.payment-option input { position:absolute; opacity:0; }
+.payment-option label { display:block; padding:0.8rem 1rem; border:2px solid var(--border); border-radius:8px; cursor:pointer; text-align:center; font-size:0.9rem; transition:all 0.2s; }
+.payment-option input:checked + label { border-color:var(--primary); background:#fff5f0; color:var(--primary); font-weight:700; }
+@media(max-width:768px){ .checkout-grid{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+{% block content %}
+<h1 style="font-family:'Playfair Display',serif;color:var(--primary);margin-bottom:2rem;">📦 Checkout</h1>
+<form method="POST">
+<div class="checkout-grid">
+    <div class="checkout-form">
+        <div class="section-label">Delivery Details</div>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="name" value="{{ session.get('user_name','') }}" required>
+        </div>
+        <div class="form-group">
+            <label>Delivery Address</label>
+            <!-- Fix #3: Pre-fill address from user profile -->
+            <textarea name="address" rows="3" placeholder="Full delivery address with PIN code" required>{{ user_address }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Phone Number</label>
+            <!-- Fix #3: Pre-fill phone from user profile -->
+            <input type="tel" name="phone" value="{{ user_phone }}" placeholder="+91 9999999999" required>
+        </div>
+        <div class="section-label" style="margin-top:2rem;">Payment Method</div>
+        <div class="payment-options">
+            <div class="payment-option">
+                <input type="radio" name="payment" id="cod" value="COD" checked>
+                <label for="cod">💵 Cash on Delivery</label>
+            </div>
+            <div class="payment-option">
+                <input type="radio" name="payment" id="upi" value="UPI">
+                <label for="upi">📱 UPI Payment</label>
+            </div>
+            <div class="payment-option">
+                <input type="radio" name="payment" id="card" value="Card">
+                <label for="card">💳 Credit/Debit Card</label>
+            </div>
+            <div class="payment-option">
+                <input type="radio" name="payment" id="netbanking" value="NetBanking">
+                <label for="netbanking">🏦 Net Banking</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="order-summary">
+        <div class="section-label">Order Summary</div>
+        {% for item in cart_products %}
+        <div class="order-item">
+            <span>{% if item.Category=='Pickles'%}🫙{% else %}🍿{% endif %} {{ item.Name }} × {{ item.Quantity }}</span>
+            <span>₹{{ "%.0f"|format(item.Subtotal) }}</span>
+        </div>
+        {% endfor %}
+        <div class="order-item">
+            <span>🚚 Delivery</span>
+            <span style="color:#28a745;">FREE</span>
+        </div>
+        <div class="order-total">
+            <span>Total</span>
+            <span>₹{{ "%.2f"|format(total) }}</span>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:1rem;font-size:1rem;margin-top:1rem;">
+            🎉 Place Order
+        </button>
+        <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:0.5rem;">🔒 Secure checkout</p>
+    </div>
+</div>
+</form>
+{% endblock %}

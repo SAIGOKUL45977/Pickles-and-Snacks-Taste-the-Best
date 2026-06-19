@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+{% block title %}All Orders{% endblock %}
+{% block page_title %}🧾 All Orders{% endblock %}
+{% block extra_css %}
+<style>
+/* Fix #14: Status filter tabs */
+.filter-tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+.filter-tab { padding:0.4rem 1rem; border-radius:20px; border:2px solid var(--border); background:#fff; font-size:0.82rem; cursor:pointer; }
+.filter-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+/* Fix #16: Expandable row for delivery details */
+.detail-row { display:none; background:#f8f9fa; }
+.detail-row td { padding:0.8rem 1rem; font-size:0.85rem; }
+.detail-row.show { display:table-row; }
+.expand-btn { cursor:pointer; color:var(--primary); font-size:0.82rem; font-weight:700; background:none; border:none; }
+</style>
+{% endblock %}
+{% block content %}
+<!-- Fix #14: Filter by order status -->
+<div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterOrders('all', this)">All ({{ orders|length }})</button>
+    {% for status in ['Confirmed','Processing','Shipped','Delivered','Cancelled'] %}
+    <button class="filter-tab" onclick="filterOrders('{{ status }}', this)">
+        {{ status }} ({{ orders|selectattr('Status','eq',status)|list|length }})
+    </button>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+    <table id="ordersTable">
+        <thead>
+            <tr><th></th><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Date</th><th>Status</th><th>Update</th></tr>
+        </thead>
+        <tbody>
+        {% for order in orders %}
+        <tr data-status="{{ order.Status }}" id="row-{{ loop.index }}">
+            <!-- Fix #16: Expand button to see delivery address -->
+            <td><button class="expand-btn" onclick="toggleDetail({{ loop.index }})">▶</button></td>
+            <td><b style="color:#8B2500;">{{ order.OrderID }}</b></td>
+            <td>{{ order.get('CustomerName', 'Unknown') }}</td>
+            <td>{% for item in order.Items %}<div style="font-size:0.8rem;">{{ item.get('Name', item.ProductID) }} × {{ item.Quantity }}</div>{% endfor %}</td>
+            <td><b>₹{{ order.Total }}</b></td>
+            <td style="font-size:0.85rem;">{{ order.PaymentMethod }}</td>
+            <td style="font-size:0.82rem;color:#888;">{{ order.OrderedAt[:10] }}</td>
+            <td><span class="status status-{{ order.Status|lower }}">{{ order.Status }}</span></td>
+            <td>
+                <form method="POST" action="{{ url_for('admin_update_order_status', order_id=order.OrderID) }}" style="display:flex;gap:0.4rem;">
+                    <select name="status" style="padding:0.3rem;border:1px solid #ddd;border-radius:4px;font-size:0.8rem;">
+                        {% for s in ['Confirmed','Processing','Shipped','Delivered','Cancelled'] %}
+                        <option value="{{ s }}" {% if order.Status==s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </form>
+            </td>
+        </tr>
+        <!-- Fix #16: Hidden detail row with delivery info -->
+        <tr class="detail-row" id="detail-{{ loop.index }}">
+            <td colspan="9">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                    <div><b>📍 Delivery Address:</b><br>{{ order.DeliveryAddress or 'Not provided' }}</div>
+                    <div><b>🕐 Ordered At:</b><br>{{ order.OrderedAt[:19].replace('T',' ') }}</div>
+                    <div><b>👤 Customer ID:</b><br><small style="color:#888;">{{ order.UserID }}</small></div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Fix #14: Filter orders by status
+function filterOrders(status, btn) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#ordersTable tbody tr[data-status]').forEach(row => {
+        row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+    });
+}
+
+// Fix #16: Toggle delivery detail row
+function toggleDetail(idx) {
+    const detail = document.getElementById('detail-' + idx);
+    const btn    = document.querySelector('#row-' + idx + ' .expand-btn');
+    detail.classList.toggle('show');
+    btn.textContent = detail.classList.contains('show') ? '▼' : '▶';
+}
+</script>
+{% endblock %}

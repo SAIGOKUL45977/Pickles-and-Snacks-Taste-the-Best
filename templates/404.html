@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found - HomeMade Pickles & Snacks{% endblock %}
+{% block content %}
+<div style="text-align:center;padding:5rem 2rem;">
+    <div style="font-size:6rem;margin-bottom:1rem;">🥒</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:3rem;color:var(--primary);margin-bottom:1rem;">404 - Page Not Found</h1>
+    <p style="color:var(--muted);font-size:1.2rem;margin-bottom:2rem;">
+        Oops! Looks like this page got pickled and disappeared.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">🏠 Go Home</a>
+        <a href="{{ url_for('products') }}" class="btn btn-outline">🛒 Shop Products</a>
+    </div>
+</div>
+{% endblock %}

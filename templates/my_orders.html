@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}My Orders - HomeMade Pickles & Snacks{% endblock %}
+{% block extra_css %}
+<style>
+.orders-title { font-family:'Playfair Display',serif; font-size:2rem; color:var(--primary); margin-bottom:2rem; }
+.order-card { background:#fff; border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+.order-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem; }
+.order-id { font-weight:700; color:var(--primary); font-size:1.1rem; }
+.order-meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; font-size:0.9rem; margin-bottom:1rem; }
+.order-meta div span { display:block; color:var(--muted); font-size:0.8rem; }
+/* Fix #4: Dynamic status colors */
+.status-confirmed  { background:#d4edda; color:#155724; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700; }
+.status-processing { background:#fff3cd; color:#856404; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700; }
+.status-shipped    { background:#cce5ff; color:#004085; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700; }
+.status-delivered  { background:#d1ecf1; color:#0c5460; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700; }
+.status-cancelled  { background:#f8d7da; color:#721c24; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.8rem; font-weight:700; }
+.order-items { border-top:1px solid var(--border); padding-top:0.8rem; }
+.order-item-row { display:flex; gap:0.5rem; font-size:0.85rem; color:var(--muted); padding:0.2rem 0; }
+/* Fix #4: Progress tracker */
+.progress-track { display:flex; justify-content:space-between; margin:1rem 0; position:relative; }
+.progress-track::before { content:''; position:absolute; top:12px; left:0; right:0; height:2px; background:var(--border); z-index:0; }
+.progress-step { text-align:center; font-size:0.7rem; color:var(--muted); position:relative; z-index:1; flex:1; }
+.progress-step .dot { width:24px; height:24px; border-radius:50%; background:var(--border); margin:0 auto 0.3rem; display:flex; align-items:center; justify-content:center; font-size:0.7rem; }
+.progress-step.done .dot { background:var(--primary); color:#fff; }
+.progress-step.done { color:var(--primary); font-weight:700; }
+</style>
+{% endblock %}
+{% block content %}
+<h1 class="orders-title">📦 My Orders</h1>
+{% if orders %}
+{% for order in orders %}
+<div class="order-card">
+    <div class="order-header">
+        <span class="order-id">{{ order.OrderID }}</span>
+        <!-- Fix #4: Dynamic status badge color -->
+        <span class="status-{{ order.Status|lower }}">
+            {% if order.Status == 'Confirmed' %}✅
+            {% elif order.Status == 'Processing' %}⏳
+            {% elif order.Status == 'Shipped' %}🚚
+            {% elif order.Status == 'Delivered' %}🎉
+            {% elif order.Status == 'Cancelled' %}❌
+            {% endif %}
+            {{ order.Status }}
+        </span>
+    </div>
+
+    <!-- Fix #4: Order progress tracker -->
+    {% set steps = ['Confirmed','Processing','Shipped','Delivered'] %}
+    {% if order.Status != 'Cancelled' %}
+    <div class="progress-track">
+        {% for step in steps %}
+        {% set step_idx = steps.index(step) %}
+        {% set curr_idx = steps.index(order.Status) if order.Status in steps else 0 %}
+        <div class="progress-step {% if step_idx <= curr_idx %}done{% endif %}">
+            <div class="dot">{% if step_idx <= curr_idx %}✓{% endif %}</div>
+            {{ step }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="order-meta">
+        <div>₹{{ order.Total }}<span>Total Amount</span></div>
+        <div>{{ order.PaymentMethod }}<span>Payment</span></div>
+        <div>{{ order.OrderedAt[:10] }}<span>Order Date</span></div>
+        <div>{{ order.Items|length }} item(s)<span>Items</span></div>
+    </div>
+
+    <div class="order-items">
+        {% for item in order.Items %}
+        <div class="order-item-row">
+            <span>{% if loop.first %}📋{% endif %}</span>
+            <span>{{ item.get('Name', item.ProductID) }} × {{ item.Quantity }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:5rem;color:var(--muted);">
+    <div style="font-size:4rem;margin-bottom:1rem;">📭</div>
+    <p style="font-size:1.5rem;margin-bottom:1rem;">No orders yet!</p>
+    <a href="{{ url_for('products') }}" class="btn btn-primary">Start Shopping</a>
+</div>
+{% endif %}
+{% endblock %}

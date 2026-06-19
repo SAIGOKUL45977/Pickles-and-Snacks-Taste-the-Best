@@ -1,0 +1,139 @@
+{% extends "admin/base.html" %}
+{% block title %}Product Images{% endblock %}
+{% block page_title %}🖼️ Manage Product Images{% endblock %}
+{% block extra_css %}
+<style>
+.image-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1.5rem; }
+.image-card { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+.image-preview {
+    width:100%; height:200px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#f5e6d3,#ffe0b2); position:relative; overflow:hidden;
+}
+.image-preview img { width:100%; height:100%; object-fit:cover; }
+.image-preview .emoji-placeholder { font-size:5rem; }
+.image-preview .has-image-badge {
+    position:absolute; top:8px; right:8px;
+    background:#28a745; color:#fff; border-radius:20px;
+    font-size:0.7rem; font-weight:700; padding:0.2rem 0.5rem;
+}
+.image-preview .no-image-badge {
+    position:absolute; top:8px; right:8px;
+    background:#ffc107; color:#000; border-radius:20px;
+    font-size:0.7rem; font-weight:700; padding:0.2rem 0.5rem;
+}
+.image-card-body { padding:1rem; }
+.image-card-name { font-weight:700; font-size:1rem; margin-bottom:0.3rem; }
+.image-card-id { color:#888; font-size:0.8rem; margin-bottom:0.8rem; }
+.upload-form { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
+.upload-form input[type=file] {
+    flex:1; padding:0.4rem; border:2px dashed var(--border);
+    border-radius:8px; font-size:0.82rem; cursor:pointer; min-width:0;
+}
+.upload-form input[type=file]:hover { border-color:var(--primary); }
+.tip-box { background:#fffbea; border:1px solid #ffc107; border-radius:12px; padding:1.5rem; margin-bottom:2rem; }
+.tip-box h3 { color:#856404; margin-bottom:0.8rem; }
+.tip-box ul { color:#856404; padding-left:1.2rem; line-height:2; font-size:0.9rem; }
+.sources-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-top:1rem; }
+.source-card { background:#fff; border-radius:8px; padding:1rem; text-align:center; border:2px solid var(--border); }
+.source-card a { color:var(--primary); font-weight:700; text-decoration:none; font-size:0.9rem; }
+.source-card p { color:#888; font-size:0.78rem; margin-top:0.3rem; }
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- Instructions -->
+<div class="tip-box">
+    <h3>📸 How to Add Product Images</h3>
+    <ul>
+        <li>Download images from <b>Unsplash, Pexels, or Pixabay</b> (all free)</li>
+        <li>Recommended size: <b>600×600 px</b> or square format</li>
+        <li>Supported formats: <b>JPG, PNG, WebP</b></li>
+        <li>Keep file size under <b>2MB</b> per image</li>
+        <li>Name doesn't matter — just select the right product</li>
+    </ul>
+
+    <div class="sources-grid">
+        <div class="source-card">
+            <div style="font-size:2rem;">🖼️</div>
+            <a href="https://unsplash.com/s/photos/pickle-jar" target="_blank">Unsplash — Pickles</a>
+            <p>Free, high quality photos</p>
+        </div>
+        <div class="source-card">
+            <div style="font-size:2rem;">📷</div>
+            <a href="https://www.pexels.com/search/indian%20snacks/" target="_blank">Pexels — Snacks</a>
+            <p>Free stock photography</p>
+        </div>
+        <div class="source-card">
+            <div style="font-size:2rem;">🌐</div>
+            <a href="https://pixabay.com/images/search/pickle/" target="_blank">Pixabay — Pickle</a>
+            <p>Free images & vectors</p>
+        </div>
+        <div class="source-card">
+            <div style="font-size:2rem;">📱</div>
+            <a href="#" onclick="alert('Take a photo of your actual product with your phone and upload it!')">Your Own Photos</a>
+            <p>Best option! Real product shots</p>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Grid -->
+<h2 style="font-family:'Playfair Display',serif;color:var(--primary);margin-bottom:1.5rem;">
+    Upload Images for Each Product
+</h2>
+
+<div class="image-grid">
+{% for product in products %}
+<div class="image-card">
+    <div class="image-preview">
+        {% if product.image_exists %}
+            <img src="{{ url_for('static', filename=product.image_path) }}"
+                 alt="{{ product.Name }}" id="preview-{{ product.ProductID }}">
+            <span class="has-image-badge">✅ Has Image</span>
+        {% else %}
+            <div class="emoji-placeholder" id="emoji-{{ product.ProductID }}">
+                {% if product.Category == 'Pickles' %}🫙{% else %}🍿{% endif %}
+            </div>
+            <img src="" alt="" id="preview-{{ product.ProductID }}"
+                 style="display:none;width:100%;height:100%;object-fit:cover;">
+            <span class="no-image-badge" id="badge-{{ product.ProductID }}">📷 No Image</span>
+        {% endif %}
+    </div>
+    <div class="image-card-body">
+        <div class="image-card-name">{{ product.Name }}</div>
+        <div class="image-card-id">{{ product.ProductID }} · {{ product.Category }}</div>
+        <form method="POST" action="{{ url_for('admin_upload_image', product_id=product.ProductID) }}"
+              enctype="multipart/form-data" class="upload-form"
+              onchange="previewImage(event, '{{ product.ProductID }}')">
+            <input type="file" name="image" accept="image/*" id="file-{{ product.ProductID }}">
+            <button type="submit" class="btn btn-primary btn-sm">⬆️ Upload</button>
+        </form>
+        {% if product.image_exists %}
+        <form method="POST" action="{{ url_for('admin_delete_image', product_id=product.ProductID) }}"
+              style="margin-top:0.5rem;" onsubmit="return confirm('Remove image for {{ product.Name }}?')">
+            <button type="submit" class="btn btn-danger btn-sm" style="width:100%;">🗑️ Remove Image</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Live preview before upload
+function previewImage(event, productId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('preview-' + productId);
+        const emoji   = document.getElementById('emoji-' + productId);
+        const badge   = document.getElementById('badge-' + productId);
+        if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+        if (emoji)   emoji.style.display = 'none';
+        if (badge)   { badge.textContent = '👁️ Preview'; badge.style.background = '#17a2b8'; }
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+{% endblock %}
