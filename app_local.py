@@ -247,7 +247,10 @@ def add_to_cart(product_id):
     cart[product_id] = current + qty
     session['cart']  = cart
     flash(f'✅ {product["Name"]} added to cart!', 'success')
-    return redirect(url_for('cart'))
+    next_page = request.form.get('next') or request.referrer
+    if next_page and next_page.startswith(request.host_url):
+        return redirect(next_page)
+    return redirect(url_for('products'))
 
 # Fix #5: Update cart quantity
 @app.route('/cart/update/<product_id>', methods=['POST'])
